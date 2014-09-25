@@ -1,0 +1,13 @@
+<fieldset>
+	<legend>Customer</legend>
+	<label for="name">Name</label>
+	<input id="name" type="text" ng-model="customer.name"><br>
+	<label for="email">E-mail</label>
+	<input id="email" type="text" ng-model="customer.email"><br>
+	<label for="vatNumber">VAT number</label>
+	<input id="vatNumber" type="text" ng-model="customer.vatNumber">
+</fieldset>
+
+<button back-button>Back</button>
+<button ng-click="delete()" ng-show="delete">Delete</button> 
+<button ng-click="save()">Save</button>

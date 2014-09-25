@@ -1,0 +1,18 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-md-2">
+      Search: <input ng-model="query">
+      <br>
+      <a href="#/customers/new">New Customer</a>
+    </div>
+    <div class="col-md-10">
+      <ul class="customers">
+        <li ng-repeat="customer in customers | filter:query" class="thumbnail">
+          <a href="#/customers/{{customer.id}}">{{customer.name}}</a>
+          <p>{{customer.email}}</p>
+        </li>
+      </ul>
+
+    </div>
+  </div>
+</div>

@@ -1,0 +1,9 @@
+{
+	"name": "invoicing-projection-service",
+	"version": "0.0.1",
+	"scripts": {"start": "node app"},
+	"dependencies": {
+		"amqp": "*",
+		"log4js": "*"
+	}
+}
