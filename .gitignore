@@ -37,3 +37,5 @@ _ReSharper*
 node_modules
 .idea
 
+
+.ntvs_analysis.dat
