@@ -1,17 +1,16 @@
-var repo = require('./key-value-store.js')
+var repo = require('./key-value-store.js');
 
 module.exports = {
 	handle: function(event, body, callback){
-		if (handlers[event])
-			handlers[event](body, callback);
-		else
-			callback('Handler for event "' + event + '" is not found.');
+		handlers[event] 
+			? handlers[event](body, callback)
+			: callback(new Error('Handler for event "' + event + '" is not found.'));
 	}
 };
 
 var handlers = {
 	'CustomerCreated': function onCustomerCreated(e, callback){
-		repo.save(e.sourceId, {id: e.sourceId, name: e.name, vatNumber: e.vatNumber, email: e.email}, callback);
+		repo.save(e.sourceId, {id: e.sourceId, name: e.name, vatNumber: e.vatNumber, email: e.email, version: e.sourceVersion}, callback);
 	},
 
 	'CustomerDeleted': function onCustomerDeleted(e, callback){

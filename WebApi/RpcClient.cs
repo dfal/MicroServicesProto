@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using Infrastructure;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -48,6 +49,7 @@ namespace WebApi
 				{
 					if (ea.BasicProperties.CorrelationId == correlationId)
 					{
+						CheckError(ea);
 						return ea.Body;
 					}
 				}
@@ -55,6 +57,19 @@ namespace WebApi
 				{
 					throw new TimeoutException(String.Format("Request '{0}' is timed out", query));
 				}
+			}
+		}
+
+		static void CheckError(BasicDeliverEventArgs ea)
+		{
+			if (ea.BasicProperties.Type != "ERROR") return;
+			var error = Convert.ToInt32(ea.BasicProperties.Headers["errorCode"]);
+			switch (error)
+			{
+				case 404:
+					throw new EntityNotFoundException();
+				default:
+					throw new Exception(Encoding.UTF8.GetString(ea.Body));
 			}
 		}
 

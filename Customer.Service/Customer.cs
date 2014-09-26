@@ -20,8 +20,8 @@ namespace Customer.Service
 			Handles<CustomerVatNumberChanged>(OnVatNumberChanged);
 		}
 
-		public Customer(string name, string vatNumber, string email)
-			: this(Guid.NewGuid())
+		public Customer(Guid id, string name, string vatNumber, string email)
+			: this(id)
 		{
 			Apply(new CustomerCreated
 			{
@@ -36,7 +36,7 @@ namespace Customer.Service
 			Apply(new CustomerDeleted());
 		}
 
-		public void Rename(string newName)
+		public void SetName(string newName)
 		{
 			AssertNotDeleted();
 
@@ -47,7 +47,7 @@ namespace Customer.Service
 			});
 		}
 
-		public void ChangeEmail(string newEmail)
+		public void SetEmail(string newEmail)
 		{
 			AssertNotDeleted();
 			if (email != newEmail) Apply(new CustomerEmailChanged
@@ -57,7 +57,7 @@ namespace Customer.Service
 			});
 		}
 
-		public void ChangeVatNumber(string newVatNumber)
+		public void SetVatNumber(string newVatNumber)
 		{
 			AssertNotDeleted();
 			if (vatNumber != newVatNumber) Apply(new CustomerVatNumberChanged

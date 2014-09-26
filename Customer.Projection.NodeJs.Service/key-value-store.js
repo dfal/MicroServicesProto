@@ -13,10 +13,10 @@ var singleton = function singleton(){
 	};
 
 	this.get = function(key, callback){
-		if (!store[key]){
-			callback('Entity with key "' + key + '" is not found.');
-		}
-		this.success(callback, store[key]);
+		if (store[key])
+			this.success(callback, store[key]);
+		else
+			callback(new Error('Entity with key "' + key + '" was not found.'));
 	};
 
 	this.getAll = function(orderBy, desc, callback){
@@ -42,11 +42,11 @@ var singleton = function singleton(){
 };
 
 singleton.instance = null;
-singleton.getInstance = function(){
-	if(this.instance === null){
+singleton.getInstance = function() {
+	if (this.instance === null) {
 		this.instance = new singleton();
 	}
 	return this.instance;
-}
+};
 
 module.exports = singleton.getInstance();

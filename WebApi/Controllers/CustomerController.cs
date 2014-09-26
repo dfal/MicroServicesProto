@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Web.Http;
 using RabbitMQ.Client;
 
@@ -23,8 +24,13 @@ namespace WebApi.Controllers
 		{
 			using (var service = new RpcClient(connection, CustomerQueryExchange))
 			{
-				var result = service.Call("GetCustomer", new { customerId = id });
-				return OK(result);
+				var result = service.Call("GetCustomer", new { customerId = id }, 60000);
+				
+				if (result != null && result.Length > 0)
+					return OK(result);
+
+				return Request.CreateErrorResponse(HttpStatusCode.NotFound,
+					string.Format("Customer with id '{0}' was not found.", id));
 			}
 		}
 
@@ -58,8 +64,14 @@ namespace WebApi.Controllers
 			{
 				var properties = channel.CreateBasicProperties();
 				properties.Type = "CreateCustomer";
-
-				channel.BasicPublish("", CustomerCommandQueue, properties, customer.ToJsonBytes());
+				
+				channel.BasicPublish("", CustomerCommandQueue, properties, new
+				{
+					CustomerId = Guid.NewGuid(),
+					customer.Name,
+					customer.Email,
+					customer.VatNumber
+				}.ToJsonBytes());
 				return CreateResponse(HttpStatusCode.Accepted);
 			}
 		}
@@ -87,6 +99,7 @@ namespace WebApi.Controllers
 		{
 			var response = CreateResponse(HttpStatusCode.OK);
 			response.Content = new ByteArrayContent(result);
+			response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 
 			return response;
 		}
