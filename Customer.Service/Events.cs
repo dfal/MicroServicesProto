@@ -7,6 +7,7 @@ namespace Customer.Service
 	{
 		public Guid SourceId { get; set; }
 		public int SourceVersion { get; set; }
+		public string CorrelationId { get; set; }
 
 		public string Name { get; set; }
 		public string VatNumber { get; set; }
@@ -17,6 +18,7 @@ namespace Customer.Service
 	{
 		public Guid SourceId { get; set; }
 		public int SourceVersion { get; set; }
+		public string CorrelationId { get; set; }
 
 		public string NewName { get; set; }
 		public string OldName { get; set; }
@@ -26,6 +28,7 @@ namespace Customer.Service
 	{
 		public Guid SourceId { get; set; }
 		public int SourceVersion { get; set; }
+		public string CorrelationId { get; set; }
 
 		public string OldEmail { get; set; }
 		public string NewEmail { get; set; }
@@ -35,6 +38,7 @@ namespace Customer.Service
 	{
 		public Guid SourceId { get; set; }
 		public int SourceVersion { get; set; }
+		public string CorrelationId { get; set; }
 
 		public string OldVatNumber { get; set; }
 		public string NewVatNumber { get; set; }
@@ -44,5 +48,6 @@ namespace Customer.Service
 	{
 		public Guid SourceId { get; set; }
 		public int SourceVersion { get; set; }
+		public string CorrelationId { get; set; }
 	}
 }

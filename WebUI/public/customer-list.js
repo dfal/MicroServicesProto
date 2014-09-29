@@ -1,6 +1,10 @@
 angular.module('WebUI')
-.controller('CustomerListController', ['$scope', '$http', 'apiRoot', function($scope, $http, apiRoot){
-	$http.get(apiRoot + '/customers').then(function(response){
+.controller('CustomerListController', ['$scope', '$http', 'apiRoot', 'lastCorrelationId', 
+	function ($scope, $http, apiRoot, lastCorrelationId) {
+	var url = apiRoot + '/customers';
+		if (lastCorrelationId.value)
+			url += '?correlationId=' + encodeURIComponent(lastCorrelationId.value);
+	$http.get(url).then(function(response){
 		$scope.customers = response.data;
 		console.log(response);
 	});

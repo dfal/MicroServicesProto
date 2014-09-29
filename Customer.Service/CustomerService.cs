@@ -54,7 +54,7 @@ namespace Customer.Service
 
 				try
 				{
-					commandHandler.Handle(ea.BasicProperties.Type, ea.Body);
+					commandHandler.Handle(ea.BasicProperties.MessageId, ea.BasicProperties.Type, ea.Body);
 					channel.BasicAck(ea.DeliveryTag, false);
 					Logger.Info("[{0}]: {1}", ea.BasicProperties.Type, Encoding.UTF8.GetString(ea.Body));
 				}

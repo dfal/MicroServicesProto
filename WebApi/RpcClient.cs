@@ -1,5 +1,7 @@
 using System;
+using System.Net;
 using System.Text;
+using System.Web.Http;
 using Infrastructure;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -36,6 +38,7 @@ namespace WebApi
 		{
 			var correlationId = Guid.NewGuid().ToString();
 			var properties = channel.CreateBasicProperties();
+			properties.MessageId = Guid.NewGuid().ToString();
 			properties.Type = query;
 			properties.ReplyTo = ReplyQueue;
 			properties.CorrelationId = correlationId;
@@ -45,29 +48,24 @@ namespace WebApi
 			while (true)
 			{
 				BasicDeliverEventArgs ea;
-				if (consumer.Queue.Dequeue(millisecondsTimeout, out ea))
-				{
-					if (ea.BasicProperties.CorrelationId == correlationId)
-					{
-						CheckError(ea);
-						return ea.Body;
-					}
-				}
-				else
-				{
+				if (!consumer.Queue.Dequeue(millisecondsTimeout, out ea))
 					throw new TimeoutException(String.Format("Request '{0}' is timed out", query));
-				}
+				
+				if (ea.BasicProperties.CorrelationId != correlationId) continue;
+					
+				CheckError(ea);
+				return ea.BasicProperties.Type == "NULL" ? null : ea.Body;
 			}
 		}
 
 		static void CheckError(BasicDeliverEventArgs ea)
 		{
 			if (ea.BasicProperties.Type != "ERROR") return;
-			var error = Convert.ToInt32(ea.BasicProperties.Headers["errorCode"]);
+			var error = Convert.ToString(ea.BasicProperties.Headers["errorCode"]);
 			switch (error)
 			{
-				case 404:
-					throw new EntityNotFoundException();
+				case "NotFound":
+					throw new HttpResponseException(HttpStatusCode.NotFound);
 				default:
 					throw new Exception(Encoding.UTF8.GetString(ea.Body));
 			}

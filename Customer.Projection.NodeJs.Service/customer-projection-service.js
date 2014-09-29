@@ -11,6 +11,9 @@ var eventQueueName = "customer.event.queue";//TODO: this one should be unique pe
 var eventErrorQueueName = "customer.event.error.queue";//TODO: this one should be unique per instance
 var eventExchangeName = "customer.event.exchange";
 
+var processedEvents = [];
+var redeliveredQueries = [];
+
 var conn = amqp.createConnection({ host: qeueHost, heartbeat: 60 }, {
 	reconnect: false,
 	//reconnectBackoffStrategy: 'liner',
@@ -44,14 +47,31 @@ var startQueryHandling = function (conn, queryHandler) {
 				logger.info(" [x] %s: %s", deliveryInfo.type, payload.data.toString('utf8'));
 				
 				var body = JSON.parse(payload.data);
+				if (body.correlationId && processedEvents.filter(function(e) {
+					return e.correlationId == body.correlationId;
+				}).length == 0) {
+					logger.warn('Requeuing query');
+					redeliveredQueries[deliveryInfo.messageId] = 1 + (redeliveredQueries[deliveryInfo.messageId] ? redeliveredQueries[deliveryInfo.messageId] : 0);
+					
+					if (redeliveredQueries[deliveryInfo.messageId] > 5)
+						msg.reject(false);
+					else
+						setTimeout(function() { msg.reject(true); }, 500); //requeue
+					
+					return;
+				}
+
+				delete redeliveredQueries[deliveryInfo.messageId];
+
 				queryHandler.handle(deliveryInfo.type, body, function (err, response) {
 					var replyOptions = { correlationId: deliveryInfo.correlationId };
 					if (err) {
 						logger.error(err);
 						replyOptions.type = 'ERROR';
-						replyOptions.headers = { errorCode: 404 };
+						replyOptions.headers = { errorCode: err.message };
 						response = err.message;
-					}
+					} else if (response === null)
+						replyOptions.type = 'NULL';
 					
 					conn.publish(deliveryInfo.replyTo, response, replyOptions, function (e) {
 						if (e) logger.error(e);
@@ -76,7 +96,12 @@ var startEventHandling = function (conn, eventHandler) {
 				
 				var body = JSON.parse(payload.data);
 				eventHandler.handle(deliveryInfo.type, body, function (err) {
-					if (err) logger.error(err);
+					if (err) {
+						body.err = err;
+						logger.error(err);
+					}
+					
+					processedEvents.push(body);
 				});
 			});
 		});

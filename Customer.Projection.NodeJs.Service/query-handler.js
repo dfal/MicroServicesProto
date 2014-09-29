@@ -10,8 +10,8 @@ module.exports = {
 };
 
 var handlers = {
-	'GetCustomer': function (q, callback) {
-		repo.get(q.customerId, callback);
+	'FindCustomer': function (q, callback) {
+		repo.find(q.customerId, callback);
 	},
 	
 	'GetAllCustomers': function (q, callback) {

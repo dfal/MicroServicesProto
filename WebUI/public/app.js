@@ -19,4 +19,5 @@ angular.module('WebUI', [
 			redirectTo: '/customers'
 		});
 }])
-.constant('apiRoot', 'http://localhost:33651/api');
+.constant('apiRoot', 'http://localhost:33651/api')
+.value('lastCorrelationId', { value: null });

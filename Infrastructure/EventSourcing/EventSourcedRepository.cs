@@ -98,6 +98,8 @@ namespace Infrastructure.EventSourcing
 			if (!isNew && !loadedHeads.ContainsKey(eventSourced))
 				throw new InvalidOperationException("Entity wasn't loaded by this instance of repository.");
 
+			Array.ForEach(changes, e => e.CorrelationId = correlationId);
+
 			var commit = new Commit
 			{
 				Id = Guid.NewGuid(),
@@ -111,7 +113,7 @@ namespace Infrastructure.EventSourcing
 					{"CorrelationId", correlationId}
 				}
 			};
-			
+
 			eventStore.Save(commit);
 
 			loadedHeads[eventSourced] = new Head

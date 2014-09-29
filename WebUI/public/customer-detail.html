@@ -8,6 +8,9 @@
 	<input id="vatNumber" type="text" ng-model="customer.vatNumber">
 </fieldset>
 
+<div ng-repeat="e in customer.events">
+	{{e | json}}
+</div>
 <button back-button>Back</button>
 <button ng-click="delete()" ng-show="delete">Delete</button> 
 <button ng-click="save()">Save</button>

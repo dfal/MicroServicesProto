@@ -17,7 +17,7 @@ namespace Customer.Service
 
 		void FillUpFakeData()
 		{
-			OnCreateCustomer(new CreateCustomerMessage
+			OnCreateCustomer(Guid.NewGuid().ToString(), new CreateCustomerMessage
 			{
 				CustomerId = Guid.NewGuid(),
 				Name = "Good customer",
@@ -25,7 +25,7 @@ namespace Customer.Service
 				VatNumber = "123456789"
 			});
 
-			OnCreateCustomer(new CreateCustomerMessage
+			OnCreateCustomer(Guid.NewGuid().ToString(), new CreateCustomerMessage
 			{
 				CustomerId = Guid.NewGuid(),
 				Name = "Awesome customer",
@@ -33,7 +33,7 @@ namespace Customer.Service
 				VatNumber = "3456123456"
 			});
 
-			OnCreateCustomer(new CreateCustomerMessage
+			OnCreateCustomer(Guid.NewGuid().ToString(), new CreateCustomerMessage
 			{
 				CustomerId = Guid.NewGuid(),
 				Name = "The best customer",
@@ -42,31 +42,31 @@ namespace Customer.Service
 			});
 		}
 
-		public void Handle(string command, byte[] body)
+		public void Handle(string commandId, string command, byte[] body)
 		{
 			switch (command)
 			{
 				case "CreateCustomer":
-					OnCreateCustomer(JsonSerializer.Deserialize<CreateCustomerMessage>(body));
+					OnCreateCustomer(commandId, JsonSerializer.Deserialize<CreateCustomerMessage>(body));
 					break;
 				case "UpdateCustomer":
-					OnUpdateCustomer(JsonSerializer.Deserialize<UpdateCustomerMessage>(body));
+					OnUpdateCustomer(commandId, JsonSerializer.Deserialize<UpdateCustomerMessage>(body));
 					break;
 				case "DeleteCustomer":
-					OnDeleteCustomer(JsonSerializer.Deserialize<DeleteCustomerMessage>(body));
+					OnDeleteCustomer(commandId, JsonSerializer.Deserialize<DeleteCustomerMessage>(body));
 					break;
 				default:
 					throw new InvalidOperationException(string.Format("Command '{0}' is not supported", command));
 			}
 		}
 
-		void OnCreateCustomer(CreateCustomerMessage message)
+		void OnCreateCustomer(string commandId, CreateCustomerMessage message)
 		{
 			var customer = new Customer(message.CustomerId, message.Name, message.VatNumber, message.Email);
-			repository.Save(customer, Guid.NewGuid().ToString());
+			repository.Save(customer, commandId);
 		}
 
-		void OnUpdateCustomer(UpdateCustomerMessage message)
+		void OnUpdateCustomer(string commandId, UpdateCustomerMessage message)
 		{
 			var customer = repository.Get(message.CustomerId);
 			
@@ -74,15 +74,15 @@ namespace Customer.Service
 			customer.SetEmail(message.Email);
 			customer.SetVatNumber(message.VatNumber);
 
-			repository.Save(customer, Guid.NewGuid().ToString());
+			repository.Save(customer, commandId);
 		}
 
-		void OnDeleteCustomer(DeleteCustomerMessage message)
+		void OnDeleteCustomer(string commandId, DeleteCustomerMessage message)
 		{
 			var customer = repository.Get(message.CustomerId);
 			customer.Delete();
 			
-			repository.Save(customer, Guid.NewGuid().ToString());
+			repository.Save(customer, commandId);
 		}
 	}
 

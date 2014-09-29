@@ -10,7 +10,14 @@ module.exports = {
 
 var handlers = {
 	'CustomerCreated': function onCustomerCreated(e, callback){
-		repo.save(e.sourceId, {id: e.sourceId, name: e.name, vatNumber: e.vatNumber, email: e.email, version: e.sourceVersion}, callback);
+		repo.save(e.sourceId, {
+			id: e.sourceId, 
+			name: e.name, 
+			vatNumber: e.vatNumber, 
+			email: e.email, 
+			version: e.sourceVersion, 
+			events: [e]
+		}, callback);
 	},
 
 	'CustomerDeleted': function onCustomerDeleted(e, callback){
@@ -25,6 +32,8 @@ var handlers = {
 			}
 		
 			customer.name = e.newName;
+			customer.events.push(e);
+
 			repo.save(customer.id, customer, callback);
 		});
 	},
@@ -37,6 +46,8 @@ var handlers = {
 			}
 		
 			customer.email = e.newEmail;
+			customer.events.push(e);
+
 			repo.save(customer.id, customer, callback);
 		});
 	},
@@ -49,6 +60,8 @@ var handlers = {
 			}
 		
 			customer.vatNumber = e.newVatNumber;
+			customer.events.push(e);
+
 			repo.save(customer.id, customer, callback);
 		});
 	}

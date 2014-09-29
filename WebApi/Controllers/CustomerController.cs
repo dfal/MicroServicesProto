@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Web.Http;
+using Infrastructure;
 using RabbitMQ.Client;
 
 namespace WebApi.Controllers
@@ -20,11 +21,11 @@ namespace WebApi.Controllers
 		}
 		
 		[HttpGet]
-		public HttpResponseMessage Get(Guid id)
+		public HttpResponseMessage Get(Guid id, string correlationId = null)
 		{
 			using (var service = new RpcClient(connection, CustomerQueryExchange))
 			{
-				var result = service.Call("GetCustomer", new { customerId = id }, 60000);
+				var result = service.Call("FindCustomer", new { customerId = id, correlationId }, 60000);
 				
 				if (result != null && result.Length > 0)
 					return OK(result);
@@ -35,11 +36,11 @@ namespace WebApi.Controllers
 		}
 
 		[HttpGet]
-		public HttpResponseMessage Get()
+		public HttpResponseMessage Get(string correlationId = null)
 		{
 			using (var service = new RpcClient(connection, CustomerQueryExchange))
 			{
-				var result = service.Call("GetAllCustomers", new { orderBy = "name", desc = false });
+				var result = service.Call("GetAllCustomers", new { orderBy = "name", desc = false, correlationId }, 60000);
 				return OK(result);
 			}
 		}
@@ -51,9 +52,10 @@ namespace WebApi.Controllers
 			{
 				var properties = channel.CreateBasicProperties();
 				properties.Type = "DeleteCustomer";
+				properties.MessageId = Guid.NewGuid().ToString();
 
 				channel.BasicPublish("", CustomerCommandQueue, properties, new { customerId = id }.ToJsonBytes());
-				return CreateResponse(HttpStatusCode.Accepted);
+				return CreateResponse(HttpStatusCode.Accepted, new { correlationId = properties.MessageId });
 			}
 		}
 
@@ -64,6 +66,7 @@ namespace WebApi.Controllers
 			{
 				var properties = channel.CreateBasicProperties();
 				properties.Type = "CreateCustomer";
+				properties.MessageId = Guid.NewGuid().ToString();
 				
 				channel.BasicPublish("", CustomerCommandQueue, properties, new
 				{
@@ -72,7 +75,7 @@ namespace WebApi.Controllers
 					customer.Email,
 					customer.VatNumber
 				}.ToJsonBytes());
-				return CreateResponse(HttpStatusCode.Accepted);
+				return CreateResponse(HttpStatusCode.Accepted, new { correlationId = properties.MessageId });
 			}
 		}
 
@@ -83,6 +86,7 @@ namespace WebApi.Controllers
 			{
 				var properties = channel.CreateBasicProperties();
 				properties.Type = "UpdateCustomer";
+				properties.MessageId = Guid.NewGuid().ToString();
 
 				channel.BasicPublish("", CustomerCommandQueue, properties, new 
 				{
@@ -91,7 +95,7 @@ namespace WebApi.Controllers
 					customer.Email,
 					customer.VatNumber
 				}.ToJsonBytes());
-				return CreateResponse(HttpStatusCode.Accepted);
+				return CreateResponse(HttpStatusCode.Accepted, new { correlationId = properties.MessageId });
 			}
 		}
 
@@ -104,10 +108,14 @@ namespace WebApi.Controllers
 			return response;
 		}
 
-		HttpResponseMessage CreateResponse(HttpStatusCode statusCode)
+		HttpResponseMessage CreateResponse(HttpStatusCode statusCode, object content = null)
 		{
 			var response = Request.CreateResponse(statusCode);
-
+			if (content == null) return response;
+			
+			response.Content = new ByteArrayContent(JsonSerializer.Serialize(content));
+			response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+			
 			return response;
 		}
 

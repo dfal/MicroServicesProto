@@ -1,48 +1,52 @@
-var singleton = function singleton(){
+var singleton = function singleton() {
 	var store = {};
-
-	this.save = function(key, data, callback){
+	
+	this.save = function (key, data, callback) {
 		this.remove(key);
 		store[key] = data;
 		this.success(callback);
 	};
-
-	this.remove = function(key, callback){
+	
+	this.remove = function (key, callback) {
 		delete store[key];
 		this.success(callback);
 	};
-
-	this.get = function(key, callback){
+	
+	this.get = function (key, callback) {
 		if (store[key])
 			this.success(callback, store[key]);
 		else
-			callback(new Error('Entity with key "' + key + '" was not found.'));
+			callback(new Error('NotFound'));
 	};
-
-	this.getAll = function(orderBy, desc, callback){
+	
+	this.find = function (key, callback) {
+		this.success(callback, store[key] ? store[key] : null);
+	};
+	
+	this.getAll = function (orderBy, desc, callback) {
 		var values = [];
-		for(var key in store) {
+		for (var key in store) {
 			values[values.length] = store[key];
 		}
-
-		values.sort(function(a, b){
+		
+		values.sort(function (a, b) {
 			if (a[orderBy] == b[orderBy]) return 0;
 			if (a[orderBy] > b[orderBy]) return 1;
 			return -1;
 		});
-
+		
 		if (desc) values.reverse();
-
+		
 		this.success(callback, values);
 	};
-
-	this.success = function(callback, result){
+	
+	this.success = function (callback, result) {
 		if (callback) callback(null, result);
 	};
 };
 
 singleton.instance = null;
-singleton.getInstance = function() {
+singleton.getInstance = function () {
 	if (this.instance === null) {
 		this.instance = new singleton();
 	}

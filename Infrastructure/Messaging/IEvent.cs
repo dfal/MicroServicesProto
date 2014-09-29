@@ -7,5 +7,7 @@ namespace Infrastructure.Messaging
 		Guid SourceId { get; set; }
 
 		int SourceVersion { get; set; }
+
+		string CorrelationId { get; set; }
 	}
 }
