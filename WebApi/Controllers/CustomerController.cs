@@ -12,7 +12,7 @@ namespace WebApi.Controllers
 	public class CustomerController : ApiController
 	{
 		readonly IConnection connection;
-		const string CustomerQueryExchange = "customer.query.exchange";
+		const string CustomerQueryQueue = "customer.query.queue";
 		const string CustomerCommandQueue = "customer.command.queue";
 
 		public CustomerController(IConnection connection)
@@ -23,7 +23,7 @@ namespace WebApi.Controllers
 		[HttpGet]
 		public HttpResponseMessage Get(Guid id, string correlationId = null)
 		{
-			using (var service = new RpcClient(connection, CustomerQueryExchange))
+			using (var service = new RpcClient(connection, CustomerQueryQueue))
 			{
 				var result = service.Call("FindCustomer", new { customerId = id, correlationId }, 60000);
 				
@@ -38,7 +38,7 @@ namespace WebApi.Controllers
 		[HttpGet]
 		public HttpResponseMessage Get(string correlationId = null)
 		{
-			using (var service = new RpcClient(connection, CustomerQueryExchange))
+			using (var service = new RpcClient(connection, CustomerQueryQueue))
 			{
 				var result = service.Call("GetAllCustomers", new { orderBy = "name", desc = false, correlationId }, 60000);
 				return OK(result);

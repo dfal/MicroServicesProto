@@ -6,7 +6,6 @@ var eventHandler = require('./event-handler.js');
 
 var qeueHost = "localhost";
 var queryQueueName = "customer.query.queue";
-var queryExchangeName = "customer.query.exchange";
 var eventQueueName = "customer.event.queue";//TODO: this one should be unique per instance
 var eventErrorQueueName = "customer.event.error.queue";//TODO: this one should be unique per instance
 var eventExchangeName = "customer.event.exchange";
@@ -35,49 +34,44 @@ conn.on('error', function (err) {
 
 var startQueryHandling = function (conn, queryHandler) {
 	
-	conn.exchange(queryExchangeName, { type: 'fanout', durable: false, autoDelete: false }, function (exchange) {
-		logger.trace('Exchange ' + queryExchangeName + ' is ready.');
+	conn.queue(queryQueueName, { durable: false, exclusive: false, autoDelete: false }, function (queue) {
 		
-		conn.queue(queryQueueName, { durable: false, exclusive: false, autoDelete: false }, function (queue) {
-			queue.bind(exchange, '');
-			
-			logger.trace(queryQueueName + ' is bound to ' + queryExchangeName);
-			
-			queue.subscribe({ack:true}, function (payload, headers, deliveryInfo, msg) {
-				logger.info(" [x] %s: %s", deliveryInfo.type, payload.data.toString('utf8'));
+		logger.trace('Subscribed to ' + queryQueueName);
+
+		queue.subscribe({ack:true}, function (payload, headers, deliveryInfo, msg) {
+			logger.info(" [x] %s: %s", deliveryInfo.type, payload.data.toString('utf8'));
 				
-				var body = JSON.parse(payload.data);
-				if (body.correlationId && processedEvents.filter(function(e) {
-					return e.correlationId == body.correlationId;
-				}).length == 0) {
-					logger.warn('Requeuing query');
-					redeliveredQueries[deliveryInfo.messageId] = 1 + (redeliveredQueries[deliveryInfo.messageId] ? redeliveredQueries[deliveryInfo.messageId] : 0);
+			var body = JSON.parse(payload.data);
+			if (body.correlationId && processedEvents.filter(function(e) {
+				return e.correlationId == body.correlationId;
+			}).length == 0) {
+				logger.warn('Requeuing query');
+				redeliveredQueries[deliveryInfo.messageId] = 1 + (redeliveredQueries[deliveryInfo.messageId] ? redeliveredQueries[deliveryInfo.messageId] : 0);
 					
-					if (redeliveredQueries[deliveryInfo.messageId] > 5)
-						msg.reject(false);
-					else
-						setTimeout(function() { msg.reject(true); }, 500); //requeue
+				if (redeliveredQueries[deliveryInfo.messageId] > 5)
+					msg.reject(false);
+				else
+					setTimeout(function() { msg.reject(true); }, 500); //requeue
 					
-					return;
-				}
+				return;
+			}
 
-				delete redeliveredQueries[deliveryInfo.messageId];
+			delete redeliveredQueries[deliveryInfo.messageId];
 
-				queryHandler.handle(deliveryInfo.type, body, function (err, response) {
-					var replyOptions = { correlationId: deliveryInfo.correlationId };
-					if (err) {
-						logger.error(err);
-						replyOptions.type = 'ERROR';
-						replyOptions.headers = { errorCode: err.message };
-						response = err.message;
-					} else if (response === null)
-						replyOptions.type = 'NULL';
+			queryHandler.handle(deliveryInfo.type, body, function (err, response) {
+				var replyOptions = { correlationId: deliveryInfo.correlationId };
+				if (err) {
+					logger.error(err);
+					replyOptions.type = 'ERROR';
+					replyOptions.headers = { errorCode: err.message };
+					response = err.message;
+				} else if (response === null)
+					replyOptions.type = 'NULL';
 					
-					conn.publish(deliveryInfo.replyTo, response, replyOptions, function (e) {
-						if (e) logger.error(e);
-					});
-					msg.acknowledge();
+				conn.publish(deliveryInfo.replyTo, response, replyOptions, function (e) {
+					if (e) logger.error(e);
 				});
+				msg.acknowledge();
 			});
 		});
 	});

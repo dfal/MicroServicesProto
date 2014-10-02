@@ -1,7 +1,8 @@
 var repo = require('./key-value-store.js');
 
 module.exports = {
-	handle: function(event, body, callback){
+	handle: function (event, body, callback) {
+		body.eventType = event;
 		handlers[event] 
 			? handlers[event](body, callback)
 			: callback(new Error('Handler for event "' + event + '" is not found.'));

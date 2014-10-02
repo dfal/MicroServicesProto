@@ -12,16 +12,16 @@ namespace WebApi
 	{
 		const string ReplyQueue = "web.api.rpc.client.response.queue";
 		
-		readonly string rpcExchange;
+		readonly string rpcQueue;
 		readonly IModel channel;
 		readonly QueueingBasicConsumer consumer;
 
-		public RpcClient(IConnection connection, string rpcExchange)
+		public RpcClient(IConnection connection, string rpcQueue)
 		{
-			this.rpcExchange = rpcExchange;
+			this.rpcQueue = rpcQueue;
 			
 			channel = connection.CreateModel();
-			channel.ExchangeDeclare(rpcExchange, "fanout", false);
+			channel.ExchangeDeclare(rpcQueue, "fanout", false);
 
 			channel.QueueDeclare(ReplyQueue, false, true, true, null);
 
@@ -43,7 +43,7 @@ namespace WebApi
 			properties.ReplyTo = ReplyQueue;
 			properties.CorrelationId = correlationId;
 
-			channel.BasicPublish(rpcExchange, "", properties, body);
+			channel.BasicPublish("", rpcQueue, properties, body);
 
 			while (true)
 			{
